@@ -1064,6 +1064,30 @@ function updateTimeSeries() {
             b: 80
 
         },
+		
+		annotations: [
+
+			{
+
+				text: "Time Series Extent",
+
+				x: 0.5,
+				y: -0.18,
+
+				xref: "paper",
+				yref: "paper",
+
+				showarrow: false,
+
+				font: {
+
+					size: 14
+
+				}
+
+			}
+
+		],
 
 
         xaxis: {
