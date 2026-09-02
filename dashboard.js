@@ -1100,7 +1100,7 @@ function updateTimeSeries() {
             type: "date",
 
             rangeslider: {
-                visible: true,
+                visible: true
             },
 
 
