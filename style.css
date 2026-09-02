@@ -239,3 +239,41 @@ main {
 
     height: 450px;
 }
+
+.colorbar-controls {
+
+    margin-top: 10px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+}
+
+
+.colorbar-controls label {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 8px;
+
+    font-size: 12px;
+
+}
+
+
+.colorbar-controls input {
+
+    width: 85px;
+
+    padding: 3px;
+
+    font-size: 12px;
+
+}

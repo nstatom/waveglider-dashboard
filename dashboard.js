@@ -2,23 +2,22 @@
 // SLAM 2026 CARSON Telemetry Dashboard
 // ============================================================
 
-
 let dashboard = null;
 
 let map = null;
-
 let trackLayer = null;
 
 let currentParameter = null;
 
-
-// Current selected time range.
-//
-// null means the full deployment.
-
 let selectedStartTime = null;
-
 let selectedEndTime = null;
+
+
+// User-selected color limits.
+// These are reset when changing parameters.
+
+let userColorMin = null;
+let userColorMax = null;
 
 
 // ============================================================
@@ -33,18 +32,13 @@ async function loadDashboard() {
             "data/dashboard.json?t=" + Date.now()
         );
 
-
         if (!response.ok) {
-
             throw new Error(
                 `HTTP error ${response.status}`
             );
-
         }
 
-
         dashboard = await response.json();
-
 
         initializeDashboard();
 
@@ -56,7 +50,6 @@ async function loadDashboard() {
             "Could not load dashboard:",
             error
         );
-
 
         document.getElementById(
             "dashboard-title"
@@ -74,7 +67,6 @@ async function loadDashboard() {
 
 function initializeDashboard() {
 
-
     document.getElementById(
         "dashboard-title"
     ).textContent =
@@ -90,9 +82,9 @@ function initializeDashboard() {
 
     initializeParameterSelector();
 
-
     initializeMap();
-
+	
+	initializeColorbarControls();
 
     updateTimeSeries();
 
@@ -105,12 +97,10 @@ function initializeDashboard() {
 
 function initializeParameterSelector() {
 
-
     const select =
         document.getElementById(
             "parameter-select"
         );
-
 
     select.innerHTML = "";
 
@@ -125,15 +115,12 @@ function initializeParameterSelector() {
                 "option"
             );
 
-
         option.value = key;
-
 
         option.textContent =
             dashboard.parameter_metadata[
                 key
             ].label;
-
 
         select.appendChild(
             option
@@ -150,18 +137,20 @@ function initializeParameterSelector() {
         "change",
         function () {
 
-
             currentParameter =
                 this.value;
 
 
-            // Keep the current
-            // time selection.
+            // Reset color limits
+            // when changing parameter.
+
+            userColorMin = null;
+            userColorMax = null;
+
 
             updateMap();
 
             updateTimeSeries();
-
 
         }
     );
@@ -175,9 +164,7 @@ function initializeParameterSelector() {
 
 function initializeMap() {
 
-
-    map =
-        L.map("map");
+    map = L.map("map");
 
 
     L.tileLayer(
@@ -185,10 +172,8 @@ function initializeMap() {
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
 
         {
-
             attribution:
                 "&copy; OpenStreetMap contributors"
-
         }
 
     ).addTo(map);
@@ -200,37 +185,29 @@ function initializeMap() {
 
 
 // ============================================================
-// Get filtered data indices
+// Get filtered indices
 // ============================================================
 
 function getFilteredIndices() {
 
-
     const indices = [];
-
-
-    const time =
-        dashboard.time;
 
 
     for (
         let i = 0;
-        i < time.length;
+        i < dashboard.time.length;
         i++
     ) {
 
-
         const t =
-            time[i];
+            dashboard.time[i];
 
 
         if (
             selectedStartTime !== null &&
             t < selectedStartTime
         ) {
-
             continue;
-
         }
 
 
@@ -238,9 +215,7 @@ function getFilteredIndices() {
             selectedEndTime !== null &&
             t > selectedEndTime
         ) {
-
             continue;
-
         }
 
 
@@ -255,11 +230,114 @@ function getFilteredIndices() {
 
 
 // ============================================================
+// Get color limits
+// ============================================================
+
+function getColorLimits() {
+
+    const metadata =
+        dashboard.parameter_metadata[
+            currentParameter
+        ];
+
+
+    const values =
+        dashboard.parameters[
+            currentParameter
+        ];
+
+
+    const validValues =
+        values.filter(
+            value => Number.isFinite(value)
+        );
+
+
+    let cmin =
+        userColorMin;
+
+
+    let cmax =
+        userColorMax;
+
+
+    if (
+        cmin === null ||
+        cmin === undefined
+    ) {
+
+        if (
+            metadata.cmin !== null &&
+            metadata.cmin !== undefined
+        ) {
+
+            cmin =
+                metadata.cmin;
+
+        }
+
+        else {
+
+            cmin =
+                Math.min(
+                    ...validValues
+                );
+
+        }
+
+    }
+
+
+    if (
+        cmax === null ||
+        cmax === undefined
+    ) {
+
+        if (
+            metadata.cmax !== null &&
+            metadata.cmax !== undefined
+        ) {
+
+            cmax =
+                metadata.cmax;
+
+        }
+
+        else {
+
+            cmax =
+                Math.max(
+                    ...validValues
+                );
+
+        }
+
+    }
+
+
+    // Prevent divide-by-zero.
+
+    if (cmin === cmax) {
+
+        cmax =
+            cmin + 1;
+
+    }
+
+
+    return {
+        cmin,
+        cmax
+    };
+
+}
+
+
+// ============================================================
 // Update map
 // ============================================================
 
 function updateMap() {
-
 
     if (!map) return;
 
@@ -280,7 +358,19 @@ function updateMap() {
         getFilteredIndices();
 
 
-    // Remove old track
+    const limits =
+        getColorLimits();
+
+
+    const cmin =
+        limits.cmin;
+
+
+    const cmax =
+        limits.cmax;
+
+
+    // Remove existing map data.
 
     if (trackLayer) {
 
@@ -291,65 +381,18 @@ function updateMap() {
     }
 
 
-    // --------------------------------------------------------
-    // Determine color range
-    // --------------------------------------------------------
-
-
-    let cmin =
-        metadata.cmin;
-
-
-    let cmax =
-        metadata.cmax;
-
-
-    const validValues =
-        values.filter(
-            Number.isFinite
-        );
-
-
-    if (
-        cmin === null ||
-        cmin === undefined
-    ) {
-
-        cmin =
-            Math.min(
-                ...validValues
-            );
-
-    }
-
-
-    if (
-        cmax === null ||
-        cmax === undefined
-    ) {
-
-        cmax =
-            Math.max(
-                ...validValues
-            );
-
-    }
-
-
-    // --------------------------------------------------------
-    // Create map points
-    // --------------------------------------------------------
-
-
     const layers = [];
 
+
+    // --------------------------------------------------------
+    // Create colored trajectory points
+    // --------------------------------------------------------
 
     for (
         let j = 0;
         j < indices.length;
         j++
     ) {
-
 
         const i =
             indices[j];
@@ -419,18 +462,19 @@ function updateMap() {
             );
 
 
-        // Hover popup
-
         marker.bindTooltip(
 
             `
-            <b>Time</b>: ${formatMapTime(dashboard.time[i])}<br>
+            <b>Time:</b>
+            ${formatMapTime(dashboard.time[i])}<br>
 
-            <b>Latitude</b>: ${lat.toFixed(5)}°<br>
+            <b>Latitude:</b>
+            ${lat.toFixed(5)}°<br>
 
-            <b>Longitude</b>: ${lon.toFixed(5)}°<br>
+            <b>Longitude:</b>
+            ${lon.toFixed(5)}°<br>
 
-            <b>${metadata.label}</b>:
+            <b>${metadata.label}:</b>
             ${
                 Number.isFinite(value)
                     ? value.toFixed(3)
@@ -440,9 +484,7 @@ function updateMap() {
             `,
 
             {
-
                 sticky: true
-
             }
 
         );
@@ -462,9 +504,8 @@ function updateMap() {
 
 
     // --------------------------------------------------------
-    // Fit map bounds
+    // Fit bounds
     // --------------------------------------------------------
-
 
     const positions =
         indices
@@ -480,17 +521,18 @@ function updateMap() {
             )
 
             .filter(
+
                 p =>
 
                     Number.isFinite(p[0]) &&
                     Number.isFinite(p[1])
+
             );
 
 
     if (
         positions.length > 0
     ) {
-
 
         const bounds =
             L.latLngBounds(
@@ -507,10 +549,8 @@ function updateMap() {
                 bounds,
 
                 {
-
                     padding:
                         [30, 30]
-
                 }
 
             );
@@ -520,19 +560,10 @@ function updateMap() {
     }
 
 
-    // --------------------------------------------------------
-    // Update colorbar
-    // --------------------------------------------------------
-
-
     updateColorbar(
-
         metadata,
-
         cmin,
-
         cmax
-
     );
 
 }
@@ -547,7 +578,6 @@ function updateColorbar(
     cmin,
     cmax
 ) {
-
 
     document.getElementById(
         "colorbar-title"
@@ -573,6 +603,38 @@ function updateColorbar(
             cmin
         );
 
+
+    const minInput =
+        document.getElementById(
+            "colorbar-min-input"
+        );
+
+
+    const maxInput =
+        document.getElementById(
+            "colorbar-max-input"
+        );
+
+
+    if (minInput) {
+
+        minInput.value =
+            formatInputValue(
+                cmin
+            );
+
+    }
+
+
+    if (maxInput) {
+
+        maxInput.value =
+            formatInputValue(
+                cmax
+            );
+
+    }
+
 }
 
 
@@ -580,39 +642,43 @@ function updateColorbar(
 // Format colorbar values
 // ============================================================
 
-function formatColorValue(
-    value
-) {
-
+function formatColorValue(value) {
 
     if (
         !Number.isFinite(value)
     ) {
-
         return "";
-
     }
 
 
     if (
         Math.abs(value) >= 100
     ) {
-
         return value.toFixed(0);
-
     }
 
 
     if (
         Math.abs(value) >= 10
     ) {
-
         return value.toFixed(1);
-
     }
 
 
     return value.toFixed(2);
+
+}
+
+
+function formatInputValue(value) {
+
+    if (
+        !Number.isFinite(value)
+    ) {
+        return "";
+    }
+
+    return Number(value).toString();
 
 }
 
@@ -627,36 +693,25 @@ function valueToColor(
     max
 ) {
 
-
     if (
         !Number.isFinite(value)
     ) {
-
         return "#999999";
-
     }
 
 
     let normalized =
-        (
-            value - min
-        )
-        /
-        (
-            max - min
-        );
+        (value - min) /
+        (max - min);
 
 
     normalized =
         Math.max(
-
             0,
-
             Math.min(
                 1,
                 normalized
             )
-
         );
 
 
@@ -668,34 +723,22 @@ function valueToColor(
 
 
 // ============================================================
-// Color scale
+// Turbo-style color scale
 // ============================================================
 
-function turboColor(
-    t
-) {
-
+function turboColor(t) {
 
     const stops = [
 
         [48, 18, 59],
-
         [65, 69, 171],
-
         [70, 117, 237],
-
         [57, 162, 252],
-
         [27, 207, 212],
-
         [91, 234, 122],
-
         [183, 243, 74],
-
         [247, 209, 61],
-
         [249, 139, 40],
-
         [232, 61, 24]
 
     ];
@@ -703,9 +746,7 @@ function turboColor(
 
     const position =
         t *
-        (
-            stops.length - 1
-        );
+        (stops.length - 1);
 
 
     const lower =
@@ -716,11 +757,8 @@ function turboColor(
 
     const upper =
         Math.min(
-
             lower + 1,
-
             stops.length - 1
-
         );
 
 
@@ -730,46 +768,34 @@ function turboColor(
 
     const r =
         Math.round(
-
             stops[lower][0] +
-
             fraction *
-
             (
                 stops[upper][0] -
                 stops[lower][0]
             )
-
         );
 
 
     const g =
         Math.round(
-
             stops[lower][1] +
-
             fraction *
-
             (
                 stops[upper][1] -
                 stops[lower][1]
             )
-
         );
 
 
     const b =
         Math.round(
-
             stops[lower][2] +
-
             fraction *
-
             (
                 stops[upper][2] -
                 stops[lower][2]
             )
-
         );
 
 
@@ -783,7 +809,6 @@ function turboColor(
 // ============================================================
 
 function updateTimeSeries() {
-
 
     const metadata =
         dashboard.parameter_metadata[
@@ -812,15 +837,11 @@ function updateTimeSeries() {
             "scatter",
 
         marker: {
-
             size: 5
-
         },
 
         line: {
-
             width: 1.5
-
         },
 
         hovertemplate:
@@ -840,15 +861,11 @@ function updateTimeSeries() {
 
     const layout = {
 
-
         margin: {
 
             l: 80,
-
             r: 30,
-
             t: 20,
-
             b: 80
 
         },
@@ -856,15 +873,10 @@ function updateTimeSeries() {
 
         xaxis: {
 
-
-            type:
-                "date",
-
+            type: "date",
 
             rangeslider: {
-
                 visible: true
-
             },
 
 
@@ -875,33 +887,24 @@ function updateTimeSeries() {
                     {
 
                         count: 1,
-
                         label: "1d",
-
                         step: "day",
-
                         stepmode: "backward"
 
                     },
-
 
                     {
 
                         count: 7,
-
                         label: "7d",
-
                         step: "day",
-
                         stepmode: "backward"
 
                     },
 
-
                     {
 
                         step: "all",
-
                         label: "All"
 
                     }
@@ -925,18 +928,14 @@ function updateTimeSeries() {
 
                 ")",
 
-            automargin:
-                true
+            automargin: true
 
         },
 
 
-        hovermode:
-            "x unified",
+        hovermode: "x unified",
 
-
-        showlegend:
-            false
+        showlegend: false
 
     };
 
@@ -950,28 +949,23 @@ function updateTimeSeries() {
         layout,
 
         {
-
-            responsive:
-                true
-
+            responsive: true
         }
 
-    )
+    ).then(
 
-
-    .then(
         attachTimeRangeListener
+
     );
 
 }
 
 
 // ============================================================
-// Connect Plotly time selection to map
+// Synchronize time range with map
 // ============================================================
 
 function attachTimeRangeListener() {
-
 
     const plot =
         document.getElementById(
@@ -988,14 +982,19 @@ function attachTimeRangeListener() {
 
         "plotly_relayout",
 
-        function (
-            eventData
-        ) {
+        function(eventData) {
 
 
-            // User changes
-            // x-axis range.
+            let start = null;
+            let end = null;
 
+
+            // ------------------------------------------------
+            // Format 1:
+            //
+            // xaxis.range[0]
+            // xaxis.range[1]
+            // ------------------------------------------------
 
             if (
 
@@ -1005,24 +1004,71 @@ function attachTimeRangeListener() {
 
             ) {
 
+                start =
+                    eventData[
+                        "xaxis.range[0]"
+                    ];
+
+
+                end =
+                    eventData[
+                        "xaxis.range[1]"
+                    ];
+
+            }
+
+
+            // ------------------------------------------------
+            // Format 2:
+            //
+            // xaxis.range = [start,end]
+            //
+            // This may occur when using
+            // the Plotly range slider.
+            // ------------------------------------------------
+
+            else if (
+
+                eventData[
+                    "xaxis.range"
+                ] !== undefined
+
+            ) {
+
+                start =
+                    eventData[
+                        "xaxis.range"
+                    ][0];
+
+
+                end =
+                    eventData[
+                        "xaxis.range"
+                    ][1];
+
+            }
+
+
+            // ------------------------------------------------
+            // Update selected range
+            // ------------------------------------------------
+
+            if (
+
+                start !== null &&
+                end !== null
+
+            ) {
 
                 selectedStartTime =
                     new Date(
-
-                        eventData[
-                            "xaxis.range[0]"
-                        ]
-
+                        start
                     ).getTime();
 
 
                 selectedEndTime =
                     new Date(
-
-                        eventData[
-                            "xaxis.range[1]"
-                        ]
-
+                        end
                     ).getTime();
 
 
@@ -1031,25 +1077,20 @@ function attachTimeRangeListener() {
             }
 
 
-            // Reset to autorange
-
+            // ------------------------------------------------
+            // Reset to full range
+            // ------------------------------------------------
 
             if (
 
                 eventData[
                     "xaxis.autorange"
-                ]
+                ] === true
 
             ) {
 
-
-                selectedStartTime =
-                    null;
-
-
-                selectedEndTime =
-                    null;
-
+                selectedStartTime = null;
+                selectedEndTime = null;
 
                 updateMap();
 
@@ -1063,13 +1104,79 @@ function attachTimeRangeListener() {
 
 
 // ============================================================
-// Format map time
+// Colorbar input controls
 // ============================================================
 
-function formatMapTime(
-    timestamp
-) {
+function initializeColorbarControls() {
 
+    const minInput =
+        document.getElementById(
+            "colorbar-min-input"
+        );
+
+
+    const maxInput =
+        document.getElementById(
+            "colorbar-max-input"
+        );
+
+
+    function updateLimits() {
+
+        const newMin =
+            Number(
+                minInput.value
+            );
+
+
+        const newMax =
+            Number(
+                maxInput.value
+            );
+
+
+        if (
+
+            Number.isFinite(newMin) &&
+            Number.isFinite(newMax) &&
+            newMin < newMax
+
+        ) {
+
+            userColorMin =
+                newMin;
+
+
+            userColorMax =
+                newMax;
+
+
+            updateMap();
+
+        }
+
+    }
+
+
+    minInput.addEventListener(
+        "change",
+        updateLimits
+    );
+
+
+    maxInput.addEventListener(
+        "change",
+        updateLimits
+    );
+
+}
+
+
+// ============================================================
+// Format time
+// ============================================================
+
+function formatMapTime(timestamp) {
 
     const date =
         new Date(
