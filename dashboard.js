@@ -1056,20 +1056,7 @@ function updateTimeSeries() {
 
 	const layout={
 		height:650,
-
 		margin:{l:80,r:30,t:20,b:80},
-
-		annotations:[{
-			text:"Time Series Extent",
-			x:0,
-			y:0.08,
-			xref:"paper",
-			yref:"paper",
-			xanchor:"left",
-			yanchor:"bottom",
-			showarrow:false,
-			font:{size:13}
-		}],
 
 		xaxis:{
 			type:"date",
