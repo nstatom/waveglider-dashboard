@@ -1069,19 +1069,24 @@ function updateTimeSeries() {
 
 			{
 
-				text: "Time Series Extent",
+				text: "Time Series Extent Slider",
 
-				x: 0.5,
-				y: -0.18,
+				x: 0,
+				y: -0.22,
 
 				xref: "paper",
 				yref: "paper",
-
+				
+				xanchor: "left",
+				yanchor: "top",
+				
 				showarrow: false,
 
+				align: "left",
+				
 				font: {
 
-					size: 14
+					size: 13
 
 				}
 
@@ -1095,7 +1100,8 @@ function updateTimeSeries() {
             type: "date",
 
             rangeslider: {
-                visible: true
+                visible: true,
+				thickness: 0.12
             },
 
 
