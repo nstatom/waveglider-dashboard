@@ -1083,6 +1083,7 @@ function updateTimeSeries() {
 				]
 			}
 		},
+	};
 
 
     Plotly.react(
