@@ -1061,7 +1061,7 @@ function updateTimeSeries() {
             l: 80,
             r: 30,
             t: 20,
-            b: 80
+            b: 100
 
         },
 		
