@@ -1069,7 +1069,7 @@ function updateTimeSeries() {
 
 			{
 
-				text: "Time Series Extent Slider",
+				text: "<b>Time Series Extent</b>",
 
 				x: 0,
 				y: -0.22,
@@ -1101,7 +1101,6 @@ function updateTimeSeries() {
 
             rangeslider: {
                 visible: true,
-				thickness: 0.12
             },
 
 
