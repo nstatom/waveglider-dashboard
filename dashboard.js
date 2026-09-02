@@ -16,6 +16,11 @@ let selectedEndTime = null;
 // User-selected color limits.
 // These are reset when changing parameters.
 
+let colorRangeSlider = null;
+
+let fullColorMin = null;
+let fullColorMax = null;
+
 let userColorMin = null;
 let userColorMax = null;
 
@@ -84,8 +89,10 @@ function initializeDashboard() {
 
     initializeMap();
 	
-	initializeColorbarControls();
+	getColorLimits();
 
+	initializeColorRangeSlider();
+	
     updateTimeSeries();
 
 }
@@ -147,6 +154,9 @@ function initializeParameterSelector() {
             userColorMin = null;
             userColorMax = null;
 
+			getColorLimits();
+
+			initializeColorRangeSlider();
 
             updateMap();
 
@@ -235,10 +245,164 @@ function getFilteredIndices() {
 
 function getColorLimits() {
 
-    const metadata =
-        dashboard.parameter_metadata[
+    const values =
+        dashboard.parameters[
             currentParameter
         ];
+
+    const validValues =
+        values.filter(
+            value => Number.isFinite(value)
+        );
+
+    fullColorMin =
+        Math.min(
+            ...validValues
+        );
+
+    fullColorMax =
+        Math.max(
+            ...validValues
+        );
+
+
+    // Default to full data range
+
+    if (
+        userColorMin === null ||
+        userColorMax === null
+    ) {
+
+        userColorMin =
+            fullColorMin;
+
+        userColorMax =
+            fullColorMax;
+
+    }
+
+
+    return {
+
+        cmin:
+            userColorMin,
+
+        cmax:
+            userColorMax
+
+    };
+
+}
+
+
+function initializeColorRangeSlider() {
+
+    const slider =
+        document.getElementById(
+            "color-range-slider"
+        );
+
+
+    if (
+        colorRangeSlider
+    ) {
+
+        colorRangeSlider.destroy();
+
+    }
+
+
+    slider.innerHTML = "";
+
+
+    colorRangeSlider =
+        noUiSlider.create(
+
+            slider,
+
+            {
+
+                start: [
+
+                    fullColorMin,
+
+                    fullColorMax
+
+                ],
+
+
+                connect: true,
+
+
+                range: {
+
+                    min:
+                        fullColorMin,
+
+                    max:
+                        fullColorMax
+
+                },
+
+
+                step:
+                    (
+                        fullColorMax -
+                        fullColorMin
+                    ) / 1000
+
+            }
+
+        );
+
+
+    colorRangeSlider.on(
+
+        "update",
+
+        function(values) {
+
+            userColorMin =
+                Number(
+                    values[0]
+                );
+
+
+            userColorMax =
+                Number(
+                    values[1]
+                );
+
+
+            updateColorbar(
+
+                dashboard.parameter_metadata[
+                    currentParameter
+                ],
+
+                userColorMin,
+
+                userColorMax
+
+            );
+
+
+            updateMapColorsOnly();
+
+        }
+
+    );
+
+}
+
+
+function updateMapColorsOnly() {
+
+    if (
+        !trackLayer
+    ) {
+        return;
+    }
 
 
     const values =
@@ -247,88 +411,119 @@ function getColorLimits() {
         ];
 
 
-    const validValues =
-        values.filter(
-            value => Number.isFinite(value)
-        );
+    const layers =
+        trackLayer.getLayers();
 
 
-    let cmin =
-        userColorMin;
+    layers.forEach(
+
+        function(marker) {
+
+            const latlng =
+                marker.getLatLng();
 
 
-    let cmax =
-        userColorMax;
-
-
-    if (
-        cmin === null ||
-        cmin === undefined
-    ) {
-
-        if (
-            metadata.cmin !== null &&
-            metadata.cmin !== undefined
-        ) {
-
-            cmin =
-                metadata.cmin;
-
-        }
-
-        else {
-
-            cmin =
-                Math.min(
-                    ...validValues
+            const index =
+                findClosestDataIndex(
+                    latlng.lat,
+                    latlng.lng
                 );
 
+
+            if (
+                index === -1
+            ) {
+                return;
+            }
+
+
+            const value =
+                values[index];
+
+
+            const color =
+                Number.isFinite(value)
+
+                ? valueToColor(
+
+                    value,
+
+                    userColorMin,
+
+                    userColorMax
+
+                )
+
+                : "#999999";
+
+
+            marker.setStyle({
+
+                color:
+                    color,
+
+                fillColor:
+                    color
+
+            });
+
         }
 
-    }
+    );
+
+}
 
 
-    if (
-        cmax === null ||
-        cmax === undefined
+function findClosestDataIndex(
+    lat,
+    lon
+) {
+
+    let closestIndex =
+        -1;
+
+    let closestDistance =
+        Infinity;
+
+
+    for (
+        let i = 0;
+        i < dashboard.latitude.length;
+        i++
     ) {
 
+        const dLat =
+            dashboard.latitude[i] -
+            lat;
+
+
+        const dLon =
+            dashboard.longitude[i] -
+            lon;
+
+
+        const distance =
+            dLat * dLat +
+            dLon * dLon;
+
+
         if (
-            metadata.cmax !== null &&
-            metadata.cmax !== undefined
+            distance <
+            closestDistance
         ) {
 
-            cmax =
-                metadata.cmax;
+            closestDistance =
+                distance;
 
-        }
-
-        else {
-
-            cmax =
-                Math.max(
-                    ...validValues
-                );
+            closestIndex =
+                i;
 
         }
 
     }
 
 
-    // Prevent divide-by-zero.
-
-    if (cmin === cmax) {
-
-        cmax =
-            cmin + 1;
-
-    }
-
-
-    return {
-        cmin,
-        cmax
-    };
+    return closestIndex;
 
 }
 
