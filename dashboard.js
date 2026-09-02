@@ -1106,6 +1106,9 @@ function updateTimeSeries() {
                 visible: true,
 				thickness: 0.12
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> parent of bc61eb8 (ui changes to slider)
+=======
 >>>>>>> parent of bc61eb8 (ui changes to slider)
 =======
 >>>>>>> parent of bc61eb8 (ui changes to slider)
