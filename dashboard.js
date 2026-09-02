@@ -1069,7 +1069,7 @@ function updateTimeSeries() {
 
 			{
 
-				text: "<b>Time Series Extent</b>",
+				text: "Time Series Extent Slider",
 
 				x: 0,
 				y: -0.22,
@@ -1100,7 +1100,12 @@ function updateTimeSeries() {
             type: "date",
 
             rangeslider: {
+<<<<<<< HEAD
                 visible: true
+=======
+                visible: true,
+				thickness: 0.12
+>>>>>>> parent of bc61eb8 (ui changes to slider)
             },
 
 

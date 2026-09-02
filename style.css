@@ -337,3 +337,11 @@ main {
     top: -6px;
 
 }
+
+/* Wider draggable handles on the time-range slider */
+
+#timeseries .rangeslider .handle {
+
+    stroke-width: 12px;
+
+}
