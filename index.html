@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Wave Glider Telemetry</title>
+
+    <!-- Leaflet -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <!-- Our stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1 id="dashboard-title">Wave Glider Telemetry</h1>
+        <div id="deployment-info"></div>
+    </header>
+
+    <main>
+
+        <!-- Parameter selector -->
+        <section class="controls">
+
+            <label for="parameter-select">
+                Environmental Parameter
+            </label>
+
+            <select id="parameter-select"></select>
+
+        </section>
+
+
+        <!-- Map -->
+        <section class="panel">
+
+            <div class="panel-header">
+                <h2 id="map-title">Vehicle Track</h2>
+            </div>
+
+            <div id="map"></div>
+
+        </section>
+
+
+        <!-- Time series -->
+        <section class="panel">
+
+            <div class="panel-header">
+                <h2 id="timeseries-title">Time Series</h2>
+            </div>
+
+            <div id="timeseries"></div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Leaflet -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+
+    <!-- Plotly -->
+    <script
+        src="https://cdn.plot.ly/plotly-2.35.2.min.js">
+    </script>
+
+    <!-- Our JavaScript -->
+    <script src="dashboard.js"></script>
+
+</body>
+</html>
