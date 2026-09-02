@@ -1,14 +1,24 @@
 // ============================================================
-// Wave Glider Telemetry Dashboard
+// SLAM 2026 CARSON Telemetry Dashboard
 // ============================================================
+
 
 let dashboard = null;
 
 let map = null;
+
 let trackLayer = null;
-let vehicleMarker = null;
 
 let currentParameter = null;
+
+
+// Current selected time range.
+//
+// null means the full deployment.
+
+let selectedStartTime = null;
+
+let selectedEndTime = null;
 
 
 // ============================================================
@@ -19,29 +29,42 @@ async function loadDashboard() {
 
     try {
 
-        // Cache-busting is useful later when MATLAB updates the file
         const response = await fetch(
             "data/dashboard.json?t=" + Date.now()
         );
 
+
         if (!response.ok) {
+
             throw new Error(
                 `HTTP error ${response.status}`
             );
+
         }
+
 
         dashboard = await response.json();
 
+
         initializeDashboard();
 
-    } catch (error) {
+    }
 
-        console.error("Could not load dashboard:", error);
+    catch (error) {
 
-        document.getElementById("dashboard-title").textContent =
+        console.error(
+            "Could not load dashboard:",
+            error
+        );
+
+
+        document.getElementById(
+            "dashboard-title"
+        ).textContent =
             "Error loading dashboard";
 
     }
+
 }
 
 
@@ -51,19 +74,27 @@ async function loadDashboard() {
 
 function initializeDashboard() {
 
-    document.getElementById("dashboard-title").textContent =
-        dashboard.metadata.vehicle + " Telemetry";
 
-    document.getElementById("deployment-info").textContent =
+    document.getElementById(
+        "dashboard-title"
+    ).textContent =
+        "SLAM 2026 CARSON Telemetry";
+
+
+    document.getElementById(
+        "deployment-info"
+    ).textContent =
         "Data generated: " +
-        formatDate(dashboard.metadata.generated);
+        dashboard.metadata.generated;
 
 
     initializeParameterSelector();
 
+
     initializeMap();
 
-    initializeTimeSeries();
+
+    updateTimeSeries();
 
 }
 
@@ -74,44 +105,67 @@ function initializeDashboard() {
 
 function initializeParameterSelector() {
 
+
     const select =
-        document.getElementById("parameter-select");
+        document.getElementById(
+            "parameter-select"
+        );
+
 
     select.innerHTML = "";
 
-    const parameters =
-        dashboard.parameters;
 
-    for (const key in parameters) {
+    for (
+        const key
+        in dashboard.parameters
+    ) {
 
         const option =
-            document.createElement("option");
+            document.createElement(
+                "option"
+            );
+
 
         option.value = key;
 
-        option.textContent =
-            dashboard.parameter_metadata[key].label;
 
-        select.appendChild(option);
+        option.textContent =
+            dashboard.parameter_metadata[
+                key
+            ].label;
+
+
+        select.appendChild(
+            option
+        );
+
     }
 
-    // First parameter
+
     currentParameter =
         select.value;
+
 
     select.addEventListener(
         "change",
         function () {
 
+
             currentParameter =
                 this.value;
+
+
+            // Keep the current
+            // time selection.
 
             updateMap();
 
             updateTimeSeries();
 
+
         }
     );
+
 }
 
 
@@ -121,27 +175,81 @@ function initializeParameterSelector() {
 
 function initializeMap() {
 
-    const lat =
-        dashboard.latitude;
 
-    const lon =
-        dashboard.longitude;
+    map =
+        L.map("map");
 
 
-    map = L.map("map");
-
-
-    // OpenStreetMap basemap
     L.tileLayer(
+
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
         {
+
             attribution:
-                '&copy; OpenStreetMap contributors'
+                "&copy; OpenStreetMap contributors"
+
         }
+
     ).addTo(map);
 
 
     updateMap();
+
+}
+
+
+// ============================================================
+// Get filtered data indices
+// ============================================================
+
+function getFilteredIndices() {
+
+
+    const indices = [];
+
+
+    const time =
+        dashboard.time;
+
+
+    for (
+        let i = 0;
+        i < time.length;
+        i++
+    ) {
+
+
+        const t =
+            time[i];
+
+
+        if (
+            selectedStartTime !== null &&
+            t < selectedStartTime
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            selectedEndTime !== null &&
+            t > selectedEndTime
+        ) {
+
+            continue;
+
+        }
+
+
+        indices.push(i);
+
+    }
+
+
+    return indices;
 
 }
 
@@ -152,26 +260,33 @@ function initializeMap() {
 
 function updateMap() {
 
+
     if (!map) return;
 
 
-    const lat =
-        dashboard.latitude;
+    const metadata =
+        dashboard.parameter_metadata[
+            currentParameter
+        ];
 
-    const lon =
-        dashboard.longitude;
 
     const values =
-        dashboard.parameters[currentParameter];
+        dashboard.parameters[
+            currentParameter
+        ];
 
-    const metadata =
-        dashboard.parameter_metadata[currentParameter];
+
+    const indices =
+        getFilteredIndices();
 
 
     // Remove old track
+
     if (trackLayer) {
 
-        map.removeLayer(trackLayer);
+        map.removeLayer(
+            trackLayer
+        );
 
     }
 
@@ -180,112 +295,324 @@ function updateMap() {
     // Determine color range
     // --------------------------------------------------------
 
-    let cmin = metadata.cmin;
-    let cmax = metadata.cmax;
+
+    let cmin =
+        metadata.cmin;
 
 
-    if (cmin === null || cmin === undefined) {
+    let cmax =
+        metadata.cmax;
 
-        cmin = Math.min(
-            ...values.filter(Number.isFinite)
+
+    const validValues =
+        values.filter(
+            Number.isFinite
         );
+
+
+    if (
+        cmin === null ||
+        cmin === undefined
+    ) {
+
+        cmin =
+            Math.min(
+                ...validValues
+            );
 
     }
 
 
-    if (cmax === null || cmax === undefined) {
+    if (
+        cmax === null ||
+        cmax === undefined
+    ) {
 
-        cmax = Math.max(
-            ...values.filter(Number.isFinite)
-        );
+        cmax =
+            Math.max(
+                ...validValues
+            );
 
     }
 
 
     // --------------------------------------------------------
-    // Create colored track
+    // Create map points
     // --------------------------------------------------------
 
-    const segments = [];
+
+    const layers = [];
 
 
-    for (let i = 0; i < lat.length - 1; i++) {
+    for (
+        let j = 0;
+        j < indices.length;
+        j++
+    ) {
+
+
+        const i =
+            indices[j];
+
+
+        const lat =
+            dashboard.latitude[i];
+
+
+        const lon =
+            dashboard.longitude[i];
+
+
+        const value =
+            values[i];
+
 
         if (
-            !Number.isFinite(lat[i]) ||
-            !Number.isFinite(lon[i]) ||
-            !Number.isFinite(values[i])
+
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lon)
+
         ) {
+
             continue;
+
         }
 
 
-        const color =
-            valueToColor(
-                values[i],
-                cmin,
-                cmax
-            );
+        let color =
+            "#999999";
 
 
-        const segment =
-            L.polyline(
-                [
-                    [lat[i], lon[i]],
-                    [lat[i + 1], lon[i + 1]]
-                ],
+        if (
+            Number.isFinite(value)
+        ) {
+
+            color =
+                valueToColor(
+                    value,
+                    cmin,
+                    cmax
+                );
+
+        }
+
+
+        const marker =
+            L.circleMarker(
+
+                [lat, lon],
+
                 {
+
+                    radius: 5,
+
                     color: color,
-                    weight: 5,
-                    opacity: 0.9
+
+                    fillColor: color,
+
+                    fillOpacity: 0.9,
+
+                    weight: 1
+
                 }
+
             );
 
 
-        segments.push(segment);
+        // Hover popup
+
+        marker.bindTooltip(
+
+            `
+            <b>Time</b>: ${formatMapTime(dashboard.time[i])}<br>
+
+            <b>Latitude</b>: ${lat.toFixed(5)}°<br>
+
+            <b>Longitude</b>: ${lon.toFixed(5)}°<br>
+
+            <b>${metadata.label}</b>:
+            ${
+                Number.isFinite(value)
+                    ? value.toFixed(3)
+                    : "NaN"
+            }
+            ${metadata.units}
+            `,
+
+            {
+
+                sticky: true
+
+            }
+
+        );
+
+
+        layers.push(
+            marker
+        );
 
     }
 
 
     trackLayer =
-        L.layerGroup(segments).addTo(map);
+        L.layerGroup(
+            layers
+        ).addTo(map);
 
 
     // --------------------------------------------------------
-    // Fit map to trajectory
+    // Fit map bounds
     // --------------------------------------------------------
 
-    const bounds =
-        L.latLngBounds(
-            lat
-                .map((latitude, i) =>
-                    [latitude, lon[i]]
-                )
-                .filter(p =>
+
+    const positions =
+        indices
+
+            .map(
+                i => [
+
+                    dashboard.latitude[i],
+
+                    dashboard.longitude[i]
+
+                ]
+            )
+
+            .filter(
+                p =>
+
                     Number.isFinite(p[0]) &&
                     Number.isFinite(p[1])
-                )
-        );
+            );
 
 
-    if (bounds.isValid()) {
+    if (
+        positions.length > 0
+    ) {
 
-        map.fitBounds(bounds, {
-            padding: [30, 30]
-        });
+
+        const bounds =
+            L.latLngBounds(
+                positions
+            );
+
+
+        if (
+            bounds.isValid()
+        ) {
+
+            map.fitBounds(
+
+                bounds,
+
+                {
+
+                    padding:
+                        [30, 30]
+
+                }
+
+            );
+
+        }
 
     }
 
 
     // --------------------------------------------------------
-    // Update title
+    // Update colorbar
     // --------------------------------------------------------
 
-    document.getElementById("map-title").textContent =
+
+    updateColorbar(
+
+        metadata,
+
+        cmin,
+
+        cmax
+
+    );
+
+}
+
+
+// ============================================================
+// Update colorbar
+// ============================================================
+
+function updateColorbar(
+    metadata,
+    cmin,
+    cmax
+) {
+
+
+    document.getElementById(
+        "colorbar-title"
+    ).textContent =
         metadata.label +
         " (" +
         metadata.units +
         ")";
+
+
+    document.getElementById(
+        "colorbar-max"
+    ).textContent =
+        formatColorValue(
+            cmax
+        );
+
+
+    document.getElementById(
+        "colorbar-min"
+    ).textContent =
+        formatColorValue(
+            cmin
+        );
+
+}
+
+
+// ============================================================
+// Format colorbar values
+// ============================================================
+
+function formatColorValue(
+    value
+) {
+
+
+    if (
+        !Number.isFinite(value)
+    ) {
+
+        return "";
+
+    }
+
+
+    if (
+        Math.abs(value) >= 100
+    ) {
+
+        return value.toFixed(0);
+
+    }
+
+
+    if (
+        Math.abs(value) >= 10
+    ) {
+
+        return value.toFixed(1);
+
+    }
+
+
+    return value.toFixed(2);
 
 }
 
@@ -294,82 +621,159 @@ function updateMap() {
 // Convert value to color
 // ============================================================
 
-function valueToColor(value, min, max) {
+function valueToColor(
+    value,
+    min,
+    max
+) {
 
-    if (!Number.isFinite(value)) {
+
+    if (
+        !Number.isFinite(value)
+    ) {
+
         return "#999999";
+
     }
 
 
     let normalized =
-        (value - min) /
-        (max - min);
+        (
+            value - min
+        )
+        /
+        (
+            max - min
+        );
 
 
     normalized =
         Math.max(
+
             0,
-            Math.min(1, normalized)
+
+            Math.min(
+                1,
+                normalized
+            )
+
         );
 
 
-    // Approximate Turbo-like color scale
-    return turboColor(normalized);
+    return turboColor(
+        normalized
+    );
 
 }
 
 
 // ============================================================
-// Turbo color approximation
+// Color scale
 // ============================================================
 
-function turboColor(t) {
+function turboColor(
+    t
+) {
+
+
+    const stops = [
+
+        [48, 18, 59],
+
+        [65, 69, 171],
+
+        [70, 117, 237],
+
+        [57, 162, 252],
+
+        [27, 207, 212],
+
+        [91, 234, 122],
+
+        [183, 243, 74],
+
+        [247, 209, 61],
+
+        [249, 139, 40],
+
+        [232, 61, 24]
+
+    ];
+
+
+    const position =
+        t *
+        (
+            stops.length - 1
+        );
+
+
+    const lower =
+        Math.floor(
+            position
+        );
+
+
+    const upper =
+        Math.min(
+
+            lower + 1,
+
+            stops.length - 1
+
+        );
+
+
+    const fraction =
+        position - lower;
+
 
     const r =
         Math.round(
-            255 *
-            Math.max(
-                0,
-                Math.min(
-                    1,
-                    1.5 * t
-                )
+
+            stops[lower][0] +
+
+            fraction *
+
+            (
+                stops[upper][0] -
+                stops[lower][0]
             )
+
         );
+
 
     const g =
         Math.round(
-            255 *
-            Math.sin(
-                Math.PI * t
+
+            stops[lower][1] +
+
+            fraction *
+
+            (
+                stops[upper][1] -
+                stops[lower][1]
             )
+
         );
+
 
     const b =
         Math.round(
-            255 *
-            Math.max(
-                0,
-                Math.min(
-                    1,
-                    1.5 * (1 - t)
-                )
+
+            stops[lower][2] +
+
+            fraction *
+
+            (
+                stops[upper][2] -
+                stops[lower][2]
             )
+
         );
 
 
-    return `rgb(${r}, ${g}, ${b})`;
-
-}
-
-
-// ============================================================
-// Initialize time series
-// ============================================================
-
-function initializeTimeSeries() {
-
-    updateTimeSeries();
+    return `rgb(${r},${g},${b})`;
 
 }
 
@@ -380,36 +784,55 @@ function initializeTimeSeries() {
 
 function updateTimeSeries() {
 
-    const values =
-        dashboard.parameters[currentParameter];
 
     const metadata =
-        dashboard.parameter_metadata[currentParameter];
+        dashboard.parameter_metadata[
+            currentParameter
+        ];
+
+
+    const values =
+        dashboard.parameters[
+            currentParameter
+        ];
 
 
     const trace = {
 
-        x: dashboard.time,
+        x:
+            dashboard.time,
 
-        y: values,
+        y:
+            values,
 
-        mode: "lines+markers",
+        mode:
+            "lines+markers",
 
-        type: "scatter",
+        type:
+            "scatter",
 
         marker: {
+
             size: 5
+
         },
 
         line: {
+
             width: 1.5
+
         },
 
         hovertemplate:
+
             "%{x|%Y-%m-%d %H:%M:%S}<br>" +
+
             metadata.label +
+
             ": %{y:.3f} " +
+
             metadata.units +
+
             "<extra></extra>"
 
     };
@@ -417,42 +840,70 @@ function updateTimeSeries() {
 
     const layout = {
 
+
         margin: {
-            l: 70,
+
+            l: 80,
+
             r: 30,
+
             t: 20,
+
             b: 80
+
         },
+
 
         xaxis: {
 
-            type: "date",
+
+            type:
+                "date",
+
 
             rangeslider: {
+
                 visible: true
+
             },
+
 
             rangeselector: {
 
                 buttons: [
 
                     {
+
                         count: 1,
+
                         label: "1d",
+
                         step: "day",
+
                         stepmode: "backward"
+
                     },
 
+
                     {
+
                         count: 7,
+
                         label: "7d",
+
                         step: "day",
+
                         stepmode: "backward"
+
                     },
 
+
                     {
+
                         step: "all",
+
                         label: "All"
+
                     }
 
                 ]
@@ -465,51 +916,183 @@ function updateTimeSeries() {
         yaxis: {
 
             title:
+
                 metadata.label +
+
                 " (" +
+
                 metadata.units +
+
                 ")",
 
-            automargin: true
+            automargin:
+                true
 
         },
 
 
-        hovermode: "x unified",
+        hovermode:
+            "x unified",
 
-        showlegend: false
+
+        showlegend:
+            false
 
     };
 
 
-    Plotly.newPlot(
+    Plotly.react(
+
         "timeseries",
+
         [trace],
+
         layout,
+
         {
-            responsive: true
+
+            responsive:
+                true
+
         }
+
+    )
+
+
+    .then(
+        attachTimeRangeListener
     );
 
 }
-    
+
 
 // ============================================================
-// Format date
+// Connect Plotly time selection to map
 // ============================================================
 
-function formatDate(timestamp) {
+function attachTimeRangeListener() {
 
-    const date =
-        new Date(timestamp);
 
-    return date.toISOString();
+    const plot =
+        document.getElementById(
+            "timeseries"
+        );
+
+
+    plot.removeAllListeners(
+        "plotly_relayout"
+    );
+
+
+    plot.on(
+
+        "plotly_relayout",
+
+        function (
+            eventData
+        ) {
+
+
+            // User changes
+            // x-axis range.
+
+
+            if (
+
+                eventData[
+                    "xaxis.range[0]"
+                ] !== undefined
+
+            ) {
+
+
+                selectedStartTime =
+                    new Date(
+
+                        eventData[
+                            "xaxis.range[0]"
+                        ]
+
+                    ).getTime();
+
+
+                selectedEndTime =
+                    new Date(
+
+                        eventData[
+                            "xaxis.range[1]"
+                        ]
+
+                    ).getTime();
+
+
+                updateMap();
+
+            }
+
+
+            // Reset to autorange
+
+
+            if (
+
+                eventData[
+                    "xaxis.autorange"
+                ]
+
+            ) {
+
+
+                selectedStartTime =
+                    null;
+
+
+                selectedEndTime =
+                    null;
+
+
+                updateMap();
+
+            }
+
+        }
+
+    );
 
 }
 
 
 // ============================================================
-// Start
+// Format map time
+// ============================================================
+
+function formatMapTime(
+    timestamp
+) {
+
+
+    const date =
+        new Date(
+            timestamp
+        );
+
+
+    return date
+        .toISOString()
+        .replace(
+            "T",
+            " "
+        )
+        .replace(
+            ".000Z",
+            " UTC"
+        );
+
+}
+
+
+// ============================================================
+// Start dashboard
 // ============================================================
 
 loadDashboard();
