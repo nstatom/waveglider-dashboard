@@ -1055,14 +1055,25 @@ function updateTimeSeries() {
 
 
 	const layout={
-		height:650,
-		margin:{l:80,r:30,t:20,b:80},
+		margin:{l:80,r:30,t:20,b:100},
+
+		annotations:[{
+			text:"Time Series Extent",
+			x:0.5,
+			y:-0.28,
+			xref:"paper",
+			yref:"paper",
+			xanchor:"center",
+			yanchor:"top",
+			showarrow:false,
+			font:{size:13}
+		}],
 
 		xaxis:{
 			type:"date",
 			rangeslider:{
 				visible:true,
-				thickness:0.18
+				thickness:0.12
 			},
 			rangeselector:{
 				buttons:[
@@ -1072,15 +1083,6 @@ function updateTimeSeries() {
 				]
 			}
 		},
-
-		yaxis:{
-			title:metadata.label+" ("+metadata.units+")",
-			automargin:true
-		},
-
-		hovermode:"x unified",
-		showlegend:false
-	};
 
 
     Plotly.react(
