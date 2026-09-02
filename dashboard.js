@@ -1054,115 +1054,46 @@ function updateTimeSeries() {
     };
 
 
-    const layout = {
+	const layout={
+		height:650,
 
-        margin: {
+		margin:{l:80,r:30,t:20,b:80},
 
-            l: 80,
-            r: 30,
-            t: 20,
-            b: 100
+		annotations:[{
+			text:"Time Series Extent",
+			x:0,
+			y:0.08,
+			xref:"paper",
+			yref:"paper",
+			xanchor:"left",
+			yanchor:"bottom",
+			showarrow:false,
+			font:{size:13}
+		}],
 
-        },
-		
-		annotations: [
-
-			{
-
-				text: "Time Series Extent Slider",
-
-				x: 0,
-				y: -0.22,
-
-				xref: "paper",
-				yref: "paper",
-				
-				xanchor: "left",
-				yanchor: "top",
-				
-				showarrow: false,
-
-				align: "left",
-				
-				font: {
-
-					size: 13
-
-				}
-
-			}
-
-		],
-
-
-        xaxis: {
-
-            type: "date",
-
-			rangeslider: {
-				visible: true,
-				thickness: 0.12
+		xaxis:{
+			type:"date",
+			rangeslider:{
+				visible:true,
+				thickness:0.18
 			},
+			rangeselector:{
+				buttons:[
+					{count:1,label:"1d",step:"day",stepmode:"backward"},
+					{count:7,label:"7d",step:"day",stepmode:"backward"},
+					{step:"all",label:"All"}
+				]
+			}
+		},
 
+		yaxis:{
+			title:metadata.label+" ("+metadata.units+")",
+			automargin:true
+		},
 
-            rangeselector: {
-
-                buttons: [
-
-                    {
-
-                        count: 1,
-                        label: "1d",
-                        step: "day",
-                        stepmode: "backward"
-
-                    },
-
-                    {
-
-                        count: 7,
-                        label: "7d",
-                        step: "day",
-                        stepmode: "backward"
-
-                    },
-
-                    {
-
-                        step: "all",
-                        label: "All"
-
-                    }
-
-                ]
-
-            }
-
-        },
-
-
-        yaxis: {
-
-            title:
-
-                metadata.label +
-
-                " (" +
-
-                metadata.units +
-
-                ")",
-
-            automargin: true
-
-        },
-
-
-        hovermode: "x unified",
-
-        showlegend: false
-
-    };
+		hovermode:"x unified",
+		showlegend:false
+	};
 
 
     Plotly.react(
