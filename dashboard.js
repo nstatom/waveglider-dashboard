@@ -1060,7 +1060,7 @@ function updateTimeSeries() {
 		annotations:[{
 			text:"Time Series Extent",
 			x:0.5,
-			y:-0.2,
+			y:-0.1,
 			xref:"paper",
 			yref:"paper",
 			xanchor:"center",
