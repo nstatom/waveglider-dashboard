@@ -1068,7 +1068,7 @@ function updateTimeSeries() {
 			type: "date",
 
 			title: {
-				text: "Time Series Extent",
+				text: "<b>Time Series Range Slider</b>",
 				font: {
 					size: 13
 				},
