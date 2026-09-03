@@ -1077,7 +1077,7 @@ function updateTimeSeries() {
 
 			rangeslider: {
 				visible: true,
-				thickness: 0.18
+				thickness: 0.25
 			},
 
 			rangeselector: {
