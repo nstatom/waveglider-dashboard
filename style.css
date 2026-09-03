@@ -344,3 +344,8 @@ main {
 #timeseries .rangeslider-grabarea-min {
     width: 20px !important;
 }
+
+#timeseries .rangeslider-grabarea-max {
+    width: 20px !important;
+}
+
