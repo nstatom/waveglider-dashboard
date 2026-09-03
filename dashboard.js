@@ -1054,32 +1054,57 @@ function updateTimeSeries() {
     };
 
 
-	const layout={
-		margin:{l:80,r:30,t:20,b:100},
+	const layout = {
 
-		annotations:[{
-			text:"Time Series Extent",
-			x:0.5,
-			y:-0,
-			xref:"paper",
-			yref:"paper",
-			xanchor:"center",
-			yanchor:"top",
-			showarrow:false,
-			font:{size:13}
+		margin: {
+			l: 80,
+			r: 30,
+			t: 20,
+			b: 140
+		},
+
+		annotations: [{
+			text: "Time Series Extent",
+			x: 0.5,
+			y: 0,
+			xref: "paper",
+			yref: "paper",
+			xanchor: "center",
+			yanchor: "top",
+			yshift: -100,
+			showarrow: false,
+			font: {
+				size: 13
+			}
 		}],
 
-		xaxis:{
-			type:"date",
-			rangeslider:{
-				visible:true,
-				thickness:0.12
+		xaxis: {
+
+			type: "date",
+
+			rangeslider: {
+				visible: true,
+				thickness: 0.12
 			},
-			rangeselector:{
-				buttons:[
-					{count:1,label:"1d",step:"day",stepmode:"backward"},
-					{count:7,label:"7d",step:"day",stepmode:"backward"},
-					{step:"all",label:"All"}
+
+			rangeselector: {
+				buttons: [
+					{
+						count: 1,
+						label: "1d",
+						step: "day",
+						stepmode: "backward"
+					},
+					{
+						count: 7,
+						label: "7d",
+						step: "day",
+						stepmode: "backward"
+					},
+					{
+						step: "all",
+						label: "All"
+					}
 				]
 			}
 		}
