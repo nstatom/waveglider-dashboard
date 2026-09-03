@@ -341,8 +341,6 @@ main {
 
 /* Wider draggable handles on the time-range slider */
 
-#timeseries .rangeslider .handle {
-
-    stroke-width: 12px;
-
+#timeseries .rangeslider-grabarea-min {
+    stroke-width: 10px !important;
 }
