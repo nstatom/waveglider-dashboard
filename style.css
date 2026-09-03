@@ -342,10 +342,10 @@ main {
 /* Wider draggable handles on the time-range slider */
 
 #timeseries .rangeslider-grabarea-min {
-    width: 20px !important;
+    width: 50px !important;
 }
 
 #timeseries .rangeslider-grabarea-max {
-    width: 20px !important;
+    width: 50px !important;
 }
 
