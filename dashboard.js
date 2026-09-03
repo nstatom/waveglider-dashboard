@@ -1060,7 +1060,7 @@ function updateTimeSeries() {
 			l: 80,
 			r: 30,
 			t: 20,
-			b: 140
+			b: 80
 		},
 
 		xaxis: {
@@ -1077,7 +1077,7 @@ function updateTimeSeries() {
 
 			rangeslider: {
 				visible: true,
-				thickness: 0.12
+				thickness: 0.18
 			},
 
 			rangeselector: {
