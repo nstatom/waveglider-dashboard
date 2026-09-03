@@ -342,19 +342,19 @@ main {
 /* Wider draggable handles on the time-range slider */
 
 #timeseries .rangeslider-grabarea-min {
-    width: 25px !important;
+    width: 18px !important;
 }
 
 #timeseries .rangeslider-grabarea-max {
-    width: 25px !important;
+    width: 18px !important;
 }
 
 #timeseries .rangeslider-handle-min {
-    width: 25px !important;
+    width: 18px !important;
 }
 
 #timeseries .rangeslider-handle-max {
-    width: 25px !important;
+    width: 18px !important;
 }
 
 
