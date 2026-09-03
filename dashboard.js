@@ -1063,24 +1063,17 @@ function updateTimeSeries() {
 			b: 140
 		},
 
-		annotations: [{
-			text: "Time Series Extent",
-			x: 0.5,
-			y: 0,
-			xref: "paper",
-			yref: "paper",
-			xanchor: "center",
-			yanchor: "top",
-			yshift: -100,
-			showarrow: false,
-			font: {
-				size: 13
-			}
-		}],
-
 		xaxis: {
 
 			type: "date",
+
+			title: {
+				text: "Time Series Extent",
+				font: {
+					size: 13
+				},
+				standoff: 20
+			},
 
 			rangeslider: {
 				visible: true,
