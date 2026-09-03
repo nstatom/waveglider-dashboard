@@ -1006,16 +1006,30 @@ function turboColor(t) {
 function updateTimeSeries() {
 
     const metadata =
-        dashboard.parameter_metadata[currentParameter];
+        dashboard.parameter_metadata[
+            currentParameter
+        ];
+
 
     const values =
-        dashboard.parameters[currentParameter];
+        dashboard.parameters[
+            currentParameter
+        ];
+
 
     const trace = {
-        x: dashboard.time,
-        y: values,
-        mode: "lines+markers",
-        type: "scatter",
+
+        x:
+            dashboard.time,
+
+        y:
+            values,
+
+        mode:
+            "lines+markers",
+
+        type:
+            "scatter",
 
         marker: {
             size: 5
@@ -1026,64 +1040,70 @@ function updateTimeSeries() {
         },
 
         hovertemplate:
+
             "%{x|%Y-%m-%d %H:%M:%S}<br>" +
+
             metadata.label +
+
             ": %{y:.3f} " +
+
             metadata.units +
+
             "<extra></extra>"
+
     };
 
-    const layout = {
 
-        margin: {
-            l: 80,
-            r: 30,
-            t: 20,
-            b: 100
-        },
+	const layout={
+		margin:{l:80,r:30,t:20,b:100},
 
-        xaxis: {
+		annotations:[{
+			text:"Time Series Extent",
+			x:0.5,
+			y:-0.1,
+			xref:"paper",
+			yref:"paper",
+			xanchor:"center",
+			yanchor:"top",
+			showarrow:false,
+			font:{size:13}
+		}],
 
-            type: "date",
+		xaxis:{
+			type:"date",
+			rangeslider:{
+				visible:true,
+				thickness:0.12
+			},
+			rangeselector:{
+				buttons:[
+					{count:1,label:"1d",step:"day",stepmode:"backward"},
+					{count:7,label:"7d",step:"day",stepmode:"backward"},
+					{step:"all",label:"All"}
+				]
+			}
+		}
+	};
 
-            rangeslider: {
-                visible: true,
-                thickness: 0.12
-            },
-
-            rangeselector: {
-                buttons: [
-                    {
-                        count: 1,
-                        label: "1d",
-                        step: "day",
-                        stepmode: "backward"
-                    },
-                    {
-                        count: 7,
-                        label: "7d",
-                        step: "day",
-                        stepmode: "backward"
-                    },
-                    {
-                        step: "all",
-                        label: "All"
-                    }
-                ]
-            }
-        }
-    };
 
     Plotly.react(
+
         "timeseries",
+
         [trace],
+
         layout,
+
         {
             responsive: true
         }
+
     ).then(
+
         attachTimeRangeListener
+
     );
+
 }
 
 
