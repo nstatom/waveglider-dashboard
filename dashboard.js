@@ -2,15 +2,20 @@
 // SLAM 2026 CARSON Telemetry Dashboard
 // ============================================================
 
+let dashboards = {};
+let deployments = {};
+
+let currentDeployment = null;
+let currentVehicle = null;
+
 let dashboard = null;
-
-let map = null;
-let trackLayer = null;
-
 let currentParameter = null;
 
 let selectedStartTime = null;
 let selectedEndTime = null;
+
+let map = null;
+let trackLayer = null;
 
 
 // User-selected color limits.
@@ -29,39 +34,269 @@ let userColorMax = null;
 // Load dashboard JSON
 // ============================================================
 
-async function loadDashboard() {
+async function loadDashboards() {
 
-    try {
+    const response = await fetch(
+        "data/index.json?t=" + Date.now()
+    );
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Could not load data/index.json"
+        );
+
+    }
+
+    const index = await response.json();
+
+    dashboards = {};
+
+    for (const filename of index.files) {
+
+        console.log(
+            "Loading:",
+            filename
+        );
 
         const response = await fetch(
-            "data/dashboard.json?t=" + Date.now()
+            "data/" + filename + "?t=" + Date.now()
         );
 
         if (!response.ok) {
-            throw new Error(
-                `HTTP error ${response.status}`
+
+            console.warn(
+                "Could not load:",
+                filename
             );
+
+            continue;
+
         }
 
-        dashboard = await response.json();
+        const data = await response.json();
 
-        initializeDashboard();
+        const deployment =
+            data.metadata.deployment;
+
+        const vehicle =
+            data.metadata.vehicle;
+
+
+        if (!dashboards[deployment]) {
+
+            dashboards[deployment] = {};
+
+        }
+
+
+        dashboards[deployment][vehicle] =
+            data;
 
     }
 
-    catch (error) {
 
-        console.error(
-            "Could not load dashboard:",
-            error
+    buildDeploymentTabs();
+
+}
+
+
+function buildDeploymentTabs() {
+
+    const container =
+        document.getElementById(
+            "deployment-tabs"
         );
 
-        document.getElementById(
-            "dashboard-title"
-        ).textContent =
-            "Error loading dashboard";
+    container.innerHTML = "";
+
+
+    const deploymentNames =
+        Object.keys(dashboards);
+
+
+    deploymentNames.forEach(
+        (deployment, index) => {
+
+            const button =
+                document.createElement("button");
+
+            button.className = "tab";
+
+            button.textContent =
+                deployment;
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    selectDeployment(
+                        deployment
+                    );
+
+                }
+            );
+
+
+            container.appendChild(button);
+
+        }
+    );
+
+
+    if (deploymentNames.length > 0) {
+
+        selectDeployment(
+            deploymentNames[0]
+        );
 
     }
+
+}
+
+
+function selectDeployment(deployment) {
+
+    currentDeployment =
+        deployment;
+
+
+    updateActiveTabs(
+        "deployment-tabs",
+        deployment
+    );
+
+
+    buildVehicleTabs();
+
+
+    const vehicles =
+        Object.keys(
+            dashboards[deployment]
+        );
+
+
+    if (vehicles.length > 0) {
+
+        selectVehicle(
+            vehicles[0]
+        );
+
+    }
+
+}
+
+
+function buildVehicleTabs() {
+
+    const container =
+        document.getElementById(
+            "vehicle-tabs"
+        );
+
+    container.innerHTML = "";
+
+
+    const vehicles =
+        Object.keys(
+            dashboards[currentDeployment]
+        );
+
+
+    vehicles.forEach(
+        vehicle => {
+
+            const button =
+                document.createElement("button");
+
+            button.className = "tab";
+
+            button.textContent =
+                vehicle;
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    selectVehicle(
+                        vehicle
+                    );
+
+                }
+            );
+
+
+            container.appendChild(button);
+
+        }
+    );
+
+}
+
+
+function selectVehicle(vehicle) {
+
+    currentVehicle =
+        vehicle;
+
+
+    dashboard =
+        dashboards[
+            currentDeployment
+        ][
+            currentVehicle
+        ];
+
+
+    updateActiveTabs(
+        "vehicle-tabs",
+        vehicle
+    );
+
+
+    initializeDashboard();
+
+}
+
+
+function updateActiveTabs(
+    containerId,
+    activeName
+) {
+
+    const container =
+        document.getElementById(
+            containerId
+        );
+
+
+    const tabs =
+        container.querySelectorAll(
+            ".tab"
+        );
+
+
+    tabs.forEach(tab => {
+
+        if (
+            tab.textContent === activeName
+        ) {
+
+            tab.classList.add(
+                "active"
+            );
+
+        } else {
+
+            tab.classList.remove(
+                "active"
+            );
+
+        }
+
+    });
 
 }
 
@@ -72,30 +307,48 @@ async function loadDashboard() {
 
 function initializeDashboard() {
 
-    document.getElementById(
-        "dashboard-title"
-    ).textContent =
-        "SLAM 2026 CARSON Telemetry";
+    selectedStartTime = null;
 
-
-    document.getElementById(
-        "deployment-info"
-    ).textContent =
-        "Data Generated: " +
-        dashboard.metadata.generated;
-
+    selectedEndTime = null;
 
     initializeParameterSelector();
 
     initializeMap();
-	
-	getColorLimits();
 
-	initializeColorRangeSlider();
-	
+    initializeColorRangeSlider();
+
+    updateMap();
+
     updateTimeSeries();
 
 }
+
+//function initializeDashboard() {
+//
+//    document.getElementById(
+//        "dashboard-title"
+//    ).textContent =
+//        "SLAM 2026 CARSON Telemetry";
+//
+//
+//    document.getElementById(
+//        "deployment-info"
+//    ).textContent =
+//        "Data Generated: " +
+//        dashboard.metadata.generated;
+//
+//
+//    initializeParameterSelector();
+//
+//    initializeMap();
+//	
+//	getColorLimits();
+//
+//	initializeColorRangeSlider();
+//	
+//    updateTimeSeries();
+//
+//}
 
 
 // ============================================================
@@ -109,61 +362,61 @@ function initializeParameterSelector() {
             "parameter-select"
         );
 
+
     select.innerHTML = "";
 
 
-    for (
-        const key
-        in dashboard.parameters
-    ) {
-
-        const option =
-            document.createElement(
-                "option"
-            );
-
-        option.value = key;
-
-        option.textContent =
-            dashboard.parameter_metadata[
-                key
-            ].label;
-
-        select.appendChild(
-            option
+    const parameters =
+        Object.keys(
+            dashboard.parameters
         );
 
-    }
+
+    parameters.forEach(
+        parameter => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                parameter;
+
+            option.textContent =
+                dashboard.parameter_metadata[
+                    parameter
+                ].label;
 
 
-    currentParameter =
-        select.value;
-
-
-    select.addEventListener(
-        "change",
-        function () {
-
-            currentParameter =
-                this.value;
-
-
-            // Reset color limits
-            // when changing parameter.
-
-            userColorMin = null;
-            userColorMax = null;
-
-			getColorLimits();
-
-			initializeColorRangeSlider();
-
-            updateMap();
-
-            updateTimeSeries();
+            select.appendChild(
+                option
+            );
 
         }
     );
+
+
+    currentParameter =
+        parameters[0];
+
+
+    select.value =
+        currentParameter;
+
+
+    select.onchange = () => {
+
+        currentParameter =
+            select.value;
+
+        initializeColorLimits();
+
+        updateMap();
+
+        updateTimeSeries();
+
+    };
 
 }
 

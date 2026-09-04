@@ -45,88 +45,72 @@
     </header>
 
 
-    <main>
+	<main>
 
-        <!-- Parameter selector -->
+		<div id="deployment-tabs" class="tabs"></div>
 
-        <section class="controls">
+		<div id="vehicle-tabs" class="tabs"></div>
 
-            <label for="parameter-select">
-                Payload Data Plot Parameter
-            </label>
+		<div id="dashboard-content">
 
-            <select id="parameter-select"></select>
+			<section class="controls">
+				<label for="parameter-select">
+					Payload Data Plot Parameter
+				</label>
 
-        </section>
+				<select id="parameter-select"></select>
+			</section>
 
+			<section class="panel">
 
-        <!-- Map -->
+				<div class="panel-header">
+					<h2>Payload Data Map View</h2>
+				</div>
 
-        <section class="panel">
+				<div class="map-container">
 
-            <div class="panel-header">
+					<div id="map"></div>
 
-                <h2>
-                    Payload Data Map View
-                </h2>
+					<div id="colorbar-container">
 
-            </div>
+						<div id="colorbar-title"></div>
 
+						<div class="colorbar-wrapper">
 
-            <div class="map-container">
+							<div class="colorbar-values">
+								<div id="colorbar-max"></div>
+								<div id="colorbar-min"></div>
+							</div>
 
-                <div id="map"></div>
-
-
-                <!-- Colorbar -->
-
-				<div id="colorbar-container">
-
-					<div id="colorbar-title"></div>
-
-					<div class="colorbar-wrapper">
-
-						<div class="colorbar-values">
-
-							<div id="colorbar-max"></div>
-
-							<div id="colorbar-min"></div>
+							<div id="colorbar"></div>
 
 						</div>
 
-						<div id="colorbar"></div>
+						<div id="color-range-slider"></div>
 
 					</div>
 
+				</div>
 
-					<!-- Interactive color range slider -->
+			</section>
 
-					<div id="color-range-slider"></div>
+			<section class="panel">
+
+				<div class="panel-header">
+
+					<h2 id="timeseries-title">
+						Payload Data Time Series
+					</h2>
 
 				</div>
 
-            </div>
+				<div id="timeseries"></div>
 
-        </section>
+			</section>
 
+		</div>
 
-        <!-- Time series -->
-
-        <section class="panel">
-
-            <div class="panel-header">
-
-                <h2 id="timeseries-title">
-                    Payload Data Time Series
-                </h2>
-
-            </div>
-
-            <div id="timeseries"></div>
-
-        </section>
-
-    </main>
+	</main>
 
 
     <!-- Leaflet -->
