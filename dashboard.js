@@ -308,12 +308,13 @@ function updateActiveTabs(
 function initializeDashboard() {
 
     selectedStartTime = null;
-
     selectedEndTime = null;
 
     initializeParameterSelector();
 
     initializeMap();
+
+    getColorLimits();
 
     initializeColorRangeSlider();
 
@@ -427,20 +428,22 @@ function initializeParameterSelector() {
 
 function initializeMap() {
 
-    map = L.map("map");
+    if (map === null) {
 
+        map = L.map("map");
 
-    L.tileLayer(
+        L.tileLayer(
 
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
 
-        {
-            attribution:
-                "&copy; OpenStreetMap contributors"
-        }
+            {
+                attribution:
+                    "&copy; OpenStreetMap contributors"
+            }
 
-    ).addTo(map);
+        ).addTo(map);
 
+    }
 
     updateMap();
 
@@ -1619,4 +1622,4 @@ function formatMapTime(timestamp) {
 // Start dashboard
 // ============================================================
 
-loadDashboard();
+loadDashboards();
