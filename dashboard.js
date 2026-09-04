@@ -81,7 +81,7 @@ function initializeDashboard() {
     document.getElementById(
         "deployment-info"
     ).textContent =
-        "Data generated: " +
+        "Data Generated: " +
         dashboard.metadata.generated;
 
 
