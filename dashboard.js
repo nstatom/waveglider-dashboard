@@ -406,18 +406,24 @@ function initializeParameterSelector() {
         currentParameter;
 
 
-    select.onchange = () => {
+	select.onchange = () => {
 
-        currentParameter =
-            select.value;
+		currentParameter =
+			select.value;
 
-        initializeColorLimits();
+		// Reset color limits for the new parameter
+		userColorMin = null;
+		userColorMax = null;
 
-        updateMap();
+		getColorLimits();
 
-        updateTimeSeries();
+		initializeColorRangeSlider();
 
-    };
+		updateMap();
+
+		updateTimeSeries();
+
+	};
 
 }
 
