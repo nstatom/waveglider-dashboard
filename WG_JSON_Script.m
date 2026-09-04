@@ -49,3 +49,38 @@ file = 'G:\Shared drives\AirSeaLab_Shared\ASTRAL_2025\PAYLOAD\MAT\WHOI1102_PLD_D
 deployment = 'ASTRAL_2025';
 vehicle = 'WHOI1102';
 WG_JSON(file,deployment,vehicle,repoFolder)
+
+
+%% Create dashboard index.json
+
+dataFolder = fullfile(repoFolder, "data");
+
+jsonFiles = dir(fullfile(dataFolder, "*_Dashboard.json"));
+
+fileNames = {jsonFiles.name};
+
+index = struct();
+index.files = fileNames;
+
+indexFile = fullfile(dataFolder, "index.json");
+
+jsonText = jsonencode(index);
+
+fid = fopen(indexFile, "w");
+
+if fid == -1
+    error("Could not open index.json for writing.");
+end
+
+fprintf(fid, "%s", jsonText);
+
+fclose(fid);
+
+fprintf("\nCreated dashboard index:\n");
+fprintf("  %s\n", indexFile);
+
+fprintf("\nFiles included:\n");
+
+for i = 1:numel(fileNames)
+    fprintf("  %s\n", fileNames{i});
+end
