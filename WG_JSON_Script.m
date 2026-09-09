@@ -50,7 +50,7 @@ deployment = 'ASTRAL_2025';
 vehicle = 'WHOI1102';
 WG_JSON(file,deployment,vehicle,repoFolder)
 
-
+load('G:\Shared drives\AirSeaLab_Shared\SLAM_2026\PAYLOAD\MAT\CARSON_PLD_DATA_ALL.mat')
 repoFolder = "C:\Users\asila\Documents\GitHub\waveglider-dashboard";
 deployment = 'SLAM_2026';
 WG_JSON_RT(CARSON, deployment, repoFolder)

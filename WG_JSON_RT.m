@@ -1,5 +1,8 @@
 function WG_JSON_RT(dataStructure, deployment, repoFolder)
 
+% This version of the function is to be called by the Wave Glider quick view function that
+% is duty cycled in real-time
+
 % ============================================================
 % Determine vehicle name from input variable
 % ============================================================

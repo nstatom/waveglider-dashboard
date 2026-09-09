@@ -1,5 +1,8 @@
 function WG_JSON_Load(file, deployment, vehicle, repoFolder)
 
+% This version of the function is to be called to load older data sets by
+% pointing to previously generated *.mat files
+
 % ============================================================
 % Wave Glider Dashboard JSON Generator
 %
