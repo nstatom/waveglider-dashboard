@@ -51,6 +51,11 @@ vehicle = 'WHOI1102';
 WG_JSON(file,deployment,vehicle,repoFolder)
 
 
+repoFolder = "C:\Users\asila\Documents\GitHub\waveglider-dashboard";
+deployment = 'SLAM_2026';
+WG_JSON_RT(CARSON, deployment, repoFolder)
+
+
 %% Create dashboard index.json
 
 dataFolder = fullfile(repoFolder, "data");

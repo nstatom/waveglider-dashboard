@@ -1,34 +1,24 @@
-function WG_JSON(file, deployment, vehicle, repoFolder)
+function WG_JSON_RT(dataStructure, deployment, repoFolder)
 
 % ============================================================
-% Wave Glider Dashboard JSON Generator
-%
-% Reads *.mat files from different deployments and vehicles to create
-% a JSON file that can be read in by a web application to view the data.
+% Determine vehicle name from input variable
 % ============================================================
 
+vehicle = inputname(1);
 
-%% ------------------------------------------------------------
-% Load MAT file
-% ------------------------------------------------------------
-
-data = load(file);
-
-
-%% ------------------------------------------------------------
-% Get vehicle data
-% ------------------------------------------------------------
-
-if ~isfield(data, vehicle)
+if isempty(vehicle)
 
     error( ...
-        "Vehicle '%s' was not found in MAT file.", ...
-        vehicle ...
+        "Vehicle name could not be determined. " + ...
+        "Call WG_JSON using the vehicle variable directly, " + ...
+        "for example: WG_JSON(CARSON, ""SLAM_2026"", repoFolder)." ...
     );
 
 end
 
-vehicleData = data.(vehicle);
+% The input structure is already the vehicle data.
+
+vehicleData = dataStructure;
 
 if ~isfield(vehicleData, "PLD2_TAB1")
 
